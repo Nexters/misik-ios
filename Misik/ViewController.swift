@@ -69,11 +69,22 @@ private extension ViewController {
         imagePicker.sourceType = .camera
         imagePicker.delegate = self
         imagePicker.allowsEditing = false
+        imagePicker.modalPresentationStyle = .fullScreen
         present(imagePicker, animated: true, completion: nil)
     }
     
     func didTapAlbum(action: UIAction) {
+        guard UIImagePickerController.isSourceTypeAvailable(.photoLibrary) else {
+            print("앨범을 사용할 수 없습니다.")
+            return
+        }
         
+        let imagePicker = UIImagePickerController()
+        imagePicker.sourceType = .photoLibrary
+        imagePicker.delegate = self
+        imagePicker.allowsEditing = false
+        imagePicker.modalPresentationStyle = .fullScreen
+        present(imagePicker, animated: true, completion: nil)
     }
 }
 
