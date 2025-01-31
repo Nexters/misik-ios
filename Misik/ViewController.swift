@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import CoreGraphics
 
 class ViewController: UIViewController {
     
@@ -21,7 +22,8 @@ class ViewController: UIViewController {
     
     private lazy var features: [Feature] = [
         .init(name: "Camera", action: didTapCamera),
-        .init(name: "Album", action: didTapAlbum)
+        .init(name: "Album", action: didTapAlbum),
+        .init(name: "OCR", action: didTapOCR),
     ]
 
     override func viewDidLoad() {
@@ -60,31 +62,38 @@ private extension ViewController {
     }
     
     func didTapCamera(action: UIAction) {
-        guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
-            print("카메라를 사용할 수 없습니다.")
-            return
-        }
-        
-        let imagePicker = UIImagePickerController()
-        imagePicker.sourceType = .camera
-        imagePicker.delegate = self
-        imagePicker.allowsEditing = false
-        imagePicker.modalPresentationStyle = .fullScreen
-        present(imagePicker, animated: true, completion: nil)
+        presentImagePickerViewController(sourceType: .camera)
     }
     
     func didTapAlbum(action: UIAction) {
-        guard UIImagePickerController.isSourceTypeAvailable(.photoLibrary) else {
-            print("앨범을 사용할 수 없습니다.")
+        presentImagePickerViewController(sourceType: .photoLibrary)
+    }
+    
+    func didTapOCR(action: UIAction) {
+        didTapCamera(action: action)
+    }
+    
+    func presentImagePickerViewController(sourceType: UIImagePickerController.SourceType) {
+        guard UIImagePickerController.isSourceTypeAvailable(sourceType) else {
+            print("\(sourceType == .camera ? "카메라" : "앨범"))를 사용할 수 없습니다.")
             return
         }
-        
         let imagePicker = UIImagePickerController()
-        imagePicker.sourceType = .photoLibrary
+        imagePicker.sourceType = sourceType
         imagePicker.delegate = self
         imagePicker.allowsEditing = false
         imagePicker.modalPresentationStyle = .fullScreen
-        present(imagePicker, animated: true, completion: nil)
+        present(imagePicker, animated: true)
+    }
+    
+    func presentOCRViewController(targetImage: UIImage) {
+        let ocrViewController = OCRViewController(
+            viewModel: OCRViewModel(
+                targetImage: targetImage,
+                processor: OCRVisionProcessor()
+            )
+        )
+        present(ocrViewController, animated: true)
     }
 }
 
@@ -101,8 +110,10 @@ private extension ViewController {
 extension ViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-        picker.dismiss(animated: true)
-        print(info[.originalImage] as? UIImage)
+        picker.dismiss(animated: true, completion: { [weak self] in
+            guard let self, let targetImage = info[.originalImage] as? UIImage else { return }
+            presentOCRViewController(targetImage: targetImage)
+        })
     }
     
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
