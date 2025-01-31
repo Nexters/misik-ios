@@ -5,7 +5,7 @@
 //  Created by Haeseok Lee on 1/31/25.
 //
 
-import Foundation
+import UIKit
 
 @testable import Misik
 
