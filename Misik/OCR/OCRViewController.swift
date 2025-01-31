@@ -18,6 +18,7 @@ final class OCRViewController: UIViewController {
         store.cancelAll()
     }
     
+    @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }

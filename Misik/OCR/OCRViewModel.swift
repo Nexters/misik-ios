@@ -40,16 +40,7 @@ final class OCRViewModel: OCRViewModelType {
     }
     
     func transform(input: OCRViewModelInput) -> OCRViewModelOutput {
-        Task {
-            for await _ in input.viewDidLoad {
-                isLoadingContinuation?.yield(true)
-                let result = (try? await processor.process(targetImage)) ?? []
-                ocrResultContinuation?.yield(result.joined(separator: "\n"))
-                isLoadingContinuation?.yield(false)
-            }
-        }
-        .regist(&store, id: "ViewDidLoad")
-        
+        transform(viewDidLoad: input.viewDidLoad)
         return OCRViewModelOutput(
             isLoading: isLoadingStream,
             targetImage: targetImage,
@@ -62,7 +53,6 @@ final class OCRViewModel: OCRViewModelType {
     private let targetImage: UIImage
     private var store: TaskStore = .init()
     
-    // MARK: Output
     private var isLoadingContinuation: AsyncStream<Bool>.Continuation?
     private lazy var isLoadingStream: AsyncStream<Bool> = .init {
         isLoadingContinuation = $0
@@ -71,5 +61,20 @@ final class OCRViewModel: OCRViewModelType {
     private var ocrResultContinuation: AsyncStream<String>.Continuation?
     private lazy var ocrResultStream: AsyncStream<String> = .init {
         ocrResultContinuation = $0
+    }
+}
+
+private extension OCRViewModel {
+    
+    func transform(viewDidLoad: AsyncStream<Void>) {
+        Task {
+            for await _ in viewDidLoad {
+                isLoadingContinuation?.yield(true)
+                let result = (try? await processor.process(targetImage)) ?? []
+                ocrResultContinuation?.yield(result.joined(separator: "\n"))
+                isLoadingContinuation?.yield(false)
+            }
+        }
+        .regist(&store, id: "ViewDidLoad")
     }
 }

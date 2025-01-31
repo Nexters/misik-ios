@@ -15,7 +15,11 @@ final class OCRVisionProcessor: OCRProcessing {
         guard let cgImage = image.cgImage else {
             throw OCRProcessorError.unknown
         }
-        let handler = VNImageRequestHandler(cgImage: cgImage, orientation: image.cgImagePropertyOrientation, options: [:])
+        let handler = VNImageRequestHandler(
+            cgImage: cgImage,
+            orientation: image.cgImagePropertyOrientation,
+            options: [:]
+        )
         return try await withCheckedThrowingContinuation { continuation in
             let request = VNRecognizeTextRequest { request, error in
                 if let error {
