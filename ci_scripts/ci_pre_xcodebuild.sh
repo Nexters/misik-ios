@@ -71,13 +71,6 @@ commit_and_push() {
 
     echo "Git 변경 사항 커밋 및 푸시 중..."
 
-    # Git 사용자 설정
-    git config --global user.name "Xcode Cloud Bot"
-    git config --global user.email "xcodecloud@ci.com"
-
-    # 원격 저장소 URL에 PAT 사용
-    git remote set-url origin https://$GITHUB_USERNAME:$GITHUB_PAT@github.com/$GITHUB_USERNAME/$GITHUB_REPO.git
-
     # 변경 사항 스테이징
     git add .
     
@@ -91,7 +84,7 @@ commit_and_push() {
     git commit -m "$COMMIT_MESSAGE"
 
     # Git 푸시 (CI 환경에서는 `--no-verify` 옵션 사용)
-    git push origin "$CI_BRANCH" --no-verify
+    git push origin https://$GITHUB_PAT@github.com/$GITHUB_REPO.git --no-verify
 }
 
 
