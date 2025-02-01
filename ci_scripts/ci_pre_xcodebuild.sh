@@ -17,9 +17,12 @@ increment_build_number() {
     agvtool new-version -all $NEW_BUILD_NUMBER
 
     echo "Updated Build Number: $NEW_BUILD_NUMBER"
+
+    # Git에 변경사항 커밋 & 푸시
+    commit_and_push "CI: 빌드 번호 증가 -> $NEW_BUILD_NUMBER"
 }
 
-# 마케팅 버전 증가 함수 (Release 빌드에서만 실행)
+# 마케팅 버전 증가 함수 (환경변수에 따라 Major, Minor, Patch 조정)
 increment_marketing_version() {
     echo "Release 배포 중... 마케팅 버전 증가 중"
 
@@ -31,8 +34,23 @@ increment_marketing_version() {
     # 마케팅 버전을 Major.Minor.Patch 형태로 분리
     IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_MARKETING_VERSION"
 
-    # Patch 버전 증가
-    PATCH=$((PATCH + 1))
+    case "$VERSION_UPDATE_TYPE" in
+        "major")
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+            ;;
+        "minor")
+            MINOR=$((MINOR + 1))
+            PATCH=0
+            ;;
+        "patch" | "" )  # 기본값은 Patch 증가
+            PATCH=$((PATCH + 1))
+            ;;
+        *)
+            echo "잘못된 VERSION_UPDATE_TYPE 값입니다. major, minor, patch 중 하나를 사용하세요."
+            ;;
+    esac
 
     # 새로운 마케팅 버전 생성
     NEW_MARKETING_VERSION="$MAJOR.$MINOR.$PATCH"
@@ -41,7 +59,41 @@ increment_marketing_version() {
 
     # 마케팅 버전 업데이트
     agvtool new-marketing-version $NEW_MARKETING_VERSION
+
+    # Git에 변경사항 커밋 & 푸시
+    commit_and_push "CI: 마케팅 버전 증가 -> $NEW_MARKETING_VERSION"
 }
+
+
+# Git 커밋 및 푸시 함수
+commit_and_push() {
+    COMMIT_MESSAGE="$1"
+
+    echo "Git 변경 사항 커밋 및 푸시 중..."
+
+    # Git 사용자 설정
+    git config --global user.name "Xcode Cloud Bot"
+    git config --global user.email "xcodecloud@ci.com"
+
+    # 원격 저장소 URL에 PAT 사용
+    git remote set-url origin https://$GITHUB_USERNAME:$GITHUB_PAT@github.com/$GITHUB_USERNAME/$GITHUB_REPO.git
+
+    # 변경 사항 스테이징
+    git add .
+    
+    # 변경 사항 확인
+    if git diff --cached --quiet; then
+        echo "변경된 파일이 없습니다. Git 커밋을 건너뜁니다."
+        return
+    fi
+
+    # Git 커밋
+    git commit -m "$COMMIT_MESSAGE"
+
+    # Git 푸시 (CI 환경에서는 `--no-verify` 옵션 사용)
+    git push origin "$CI_BRANCH" --no-verify
+}
+
 
 # CI_WORKFLOW 값에 따라 실행
 case "$CI_WORKFLOW" in
