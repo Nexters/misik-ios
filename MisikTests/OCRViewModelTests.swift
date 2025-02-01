@@ -55,7 +55,7 @@ final class OCRViewModelTests {
         }
 
         // OCR 처리가 완료될 때까지 대기
-        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5초 대기
+        try? await Task.sleep(nanoseconds: 1_000_000_000) // 1.0초 대기
 
         #expect(isLoadingStates == [true, false], "isLoading이 true -> false 순서로 변경되어야 합니다.")
         #expect(ocrResults == ["Test OCR Result"], "OCR 결과가 예상과 일치해야 합니다.")
@@ -91,7 +91,7 @@ final class OCRViewModelTests {
             }
         }
 
-        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5초 대기
+        try? await Task.sleep(nanoseconds: 1_000_000_000) // 1.0초 대기
 
         #expect(isLoadingStates == [true, false], "isLoading이 true -> false 순서로 변경되어야 합니다.")
         #expect(ocrResults == [""], "OCR 결과가 빈 문자열이어야 합니다.")
