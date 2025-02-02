@@ -81,19 +81,11 @@ commit_and_push() {
     git remote add origin https://$GITHUB_PAT@github.com/$GITHUB_REPO.git
 
     # 현재 브랜치 출력
-    echo "현재 브랜치1"
     BRANCH_NAME=$(git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD)
     echo "Current branch: $BRANCH_NAME"
-
 
     git fetch origin
-    git checkout $GIT_BRANCH_NAME
-    git pull origin $GIT_BRANCH_NAME
-
-    # 현재 브랜치 출력
-    echo "현재 브랜치2"
-    BRANCH_NAME=$(git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD)
-    echo "Current branch: $BRANCH_NAME"
+    git pull origin $BRANCH_NAME
 
     # 변경 사항 스테이징
     git add .
@@ -116,7 +108,7 @@ if [ "$CI_XCODEBUILD_ACTION" = "archive" ]; then
 
     # CI_WORKFLOW 값에 따라 실행
     case "$CI_WORKFLOW" in
-        "TestFlight" | "TEST")
+        "TestFlight")
             increment_build_number "TestFlight"
             ;;
         "Release")
@@ -129,4 +121,5 @@ if [ "$CI_XCODEBUILD_ACTION" = "archive" ]; then
     esac
 else
     echo "⏩ 현재 빌드는 archive 상태가 아니므로, 빌드 번호 변경을 건너뜁니다."
+    increment_build_number "TestFlight"
 fi
