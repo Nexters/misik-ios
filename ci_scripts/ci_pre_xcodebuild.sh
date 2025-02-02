@@ -85,6 +85,7 @@ commit_and_push() {
     echo "Current branch: $BRANCH_NAME"
 
     git fetch origin
+    git checkout $BRANCH_NAME
     git pull origin $BRANCH_NAME
 
     # 변경 사항 스테이징
@@ -100,7 +101,7 @@ commit_and_push() {
     git commit -m "$COMMIT_MESSAGE"
 
     # Git 푸시
-    git push --force origin $GIT_BRANCH_NAME --no-verify
+    git push --force origin $BRANCH_NAME --no-verify
 }
 
 if [ "$CI_XCODEBUILD_ACTION" = "archive" ]; then
