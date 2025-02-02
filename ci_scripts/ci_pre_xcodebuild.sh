@@ -80,10 +80,11 @@ commit_and_push() {
     git remote remove origin
     git remote add origin https://$GITHUB_PAT@github.com/$GITHUB_REPO.git
 
-    git checkout -B $CI_BRANCH origin/$CI_BRANCH
+    git checkout $GIT_BRANCH_NAME
 
     # 현재 브랜치 출력
-    echo "현재 브랜치: $CI_BRANCH"
+    echo "현재 브랜치"
+    git checkout
 
     # 변경 사항 스테이징
     git add .
@@ -98,7 +99,7 @@ commit_and_push() {
     git commit -m "$COMMIT_MESSAGE"
 
     # Git 푸시
-    git push origin $CI_BRANCH --no-verify
+    git push origin $GIT_BRANCH_NAME --no-verify
 }
 
 
