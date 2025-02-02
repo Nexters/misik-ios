@@ -80,10 +80,18 @@ commit_and_push() {
     git remote remove origin
     git remote add origin https://$GITHUB_PAT@github.com/$GITHUB_REPO.git
 
+    # 현재 브랜치 출력
+    echo "현재 브랜치1"
+    BRANCH_NAME=$(git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD)
+    echo "Current branch: $BRANCH_NAME"
+
+
+    git fetch origin
     git checkout $GIT_BRANCH_NAME
+    git pull --rebase origin $GIT_BRANCH_NAME
 
     # 현재 브랜치 출력
-    echo "현재 브랜치"
+    echo "현재 브랜치2"
     BRANCH_NAME=$(git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD)
     echo "Current branch: $BRANCH_NAME"
 
