@@ -32,8 +32,10 @@ final class OCRViewModelTests {
         
         // AsyncStream을 통해 viewDidLoad 이벤트 트리거
         let viewDidLoadStream = AsyncStream<Void> { continuation in
-            continuation.yield(())
-            continuation.finish()
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(100)) {
+                continuation.yield(())
+                continuation.finish()
+            }
         }
         
         let input = OCRViewModelInput(viewDidLoad: viewDidLoadStream)
@@ -50,7 +52,7 @@ final class OCRViewModelTests {
 
         let resultTask = Task {
             for await result in output.ocrResult {
-                ocrResults.append(result)
+                ocrResults.append(contentsOf: result)
             }
         }
 
@@ -69,8 +71,10 @@ final class OCRViewModelTests {
         mockProcessor.mockResult = []
 
         let viewDidLoadStream = AsyncStream<Void> { continuation in
-            continuation.yield(())
-            continuation.finish()
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(100)) {
+                continuation.yield(())
+                continuation.finish()
+            }
         }
 
         let input = OCRViewModelInput(viewDidLoad: viewDidLoadStream)
@@ -87,14 +91,14 @@ final class OCRViewModelTests {
 
         let resultTask = Task {
             for await result in output.ocrResult {
-                ocrResults.append(result)
+                ocrResults.append(contentsOf: result)
             }
         }
 
         try? await Task.sleep(nanoseconds: 1_000_000_000) // 1.0초 대기
 
         #expect(isLoadingStates == [true, false], "isLoading이 true -> false 순서로 변경되어야 합니다.")
-        #expect(ocrResults == [""], "OCR 결과가 빈 문자열이어야 합니다.")
+        #expect(ocrResults == [], "OCR 결과가 빈 문자열이어야 합니다.")
 
         task.cancel()
         resultTask.cancel()
