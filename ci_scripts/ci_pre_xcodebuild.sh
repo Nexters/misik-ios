@@ -122,5 +122,4 @@ if [ "$CI_XCODEBUILD_ACTION" = "archive" ]; then
     esac
 else
     echo "⏩ 현재 빌드는 archive 상태가 아니므로, 빌드 번호 변경을 건너뜁니다."
-    increment_build_number "TestFlight"
 fi
