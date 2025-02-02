@@ -111,17 +111,22 @@ commit_and_push() {
     git push --force origin $GIT_BRANCH_NAME --no-verify
 }
 
+if [ "$CI_XCODEBUILD_ACTION" = "archive" ]; then
+    echo "✅ 현재 Xcode 빌드 액션: archive (배포 빌드 진행)"
 
-# CI_WORKFLOW 값에 따라 실행
-case "$CI_WORKFLOW" in
-    "TestFlight" | "TEST")
-        increment_build_number "TestFlight"
-        ;;
-    "Release")
-        increment_build_number "Release"
-        increment_marketing_version
-        ;;
-    *)
-        echo "Do nothing..."
-        ;;
-esac
+    # CI_WORKFLOW 값에 따라 실행
+    case "$CI_WORKFLOW" in
+        "TestFlight" | "TEST")
+            increment_build_number "TestFlight"
+            ;;
+        "Release")
+            increment_build_number "Release"
+            increment_marketing_version
+            ;;
+        *)
+            echo "Do nothing..."
+            ;;
+    esac
+else
+    echo "⏩ 현재 빌드는 archive 상태가 아니므로, 빌드 번호 변경을 건너뜁니다."
+fi
