@@ -93,7 +93,7 @@ commit_and_push() {
     git commit -m "$COMMIT_MESSAGE"
 
     # Git 푸시
-    git push origin HEAD:$CI_BRANCH --no-verify
+    git push origin $CI_BRANCH --no-verify
 }
 
 
