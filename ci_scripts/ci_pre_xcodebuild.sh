@@ -84,7 +84,8 @@ commit_and_push() {
 
     # 현재 브랜치 출력
     echo "현재 브랜치"
-    git checkout
+    BRANCH_NAME=$(git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD)
+    echo "Current branch: $BRANCH_NAME"
 
     # 변경 사항 스테이징
     git add .
