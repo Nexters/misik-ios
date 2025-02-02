@@ -88,7 +88,7 @@ commit_and_push() {
 
     git fetch origin
     git checkout $GIT_BRANCH_NAME
-    git pull --rebase origin $GIT_BRANCH_NAME
+    git pull origin $GIT_BRANCH_NAME
 
     # 현재 브랜치 출력
     echo "현재 브랜치2"
@@ -108,7 +108,7 @@ commit_and_push() {
     git commit -m "$COMMIT_MESSAGE"
 
     # Git 푸시
-    git push origin $GIT_BRANCH_NAME --no-verify
+    git push --force origin $GIT_BRANCH_NAME --no-verify
 }
 
 
