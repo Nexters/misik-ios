@@ -99,7 +99,7 @@ commit_and_push() {
 
 # CI_WORKFLOW 값에 따라 실행
 case "$CI_WORKFLOW" in
-    "TestFlight")
+    "TestFlight" | "TEST")
         increment_build_number "TestFlight"
         ;;
     "Release")
