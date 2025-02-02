@@ -36,6 +36,7 @@ class ViewController: UIViewController {
 private extension ViewController {
     
     func setupUI() {
+        view.backgroundColor = .white
         
         features.map { feature in
             var configuration = UIButton.Configuration.filled()
@@ -93,6 +94,8 @@ private extension ViewController {
                 processor: OCRVisionProcessor()
             )
         )
+        ocrViewController.modalPresentationStyle = .fullScreen
+        ocrViewController.delegate = self
         present(ocrViewController, animated: true)
     }
 }
@@ -118,5 +121,13 @@ extension ViewController: UIImagePickerControllerDelegate, UINavigationControlle
     
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
         picker.dismiss(animated: true)
+    }
+}
+
+// MARK: - OCRViewController
+extension ViewController: OCRViewController.Delegate {
+    
+    func ocrViewController(_ controller: OCRViewController, didFinishOCR result: [String]) {
+        print(result)
     }
 }

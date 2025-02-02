@@ -24,7 +24,7 @@ struct OCRViewModelInput {
 struct OCRViewModelOutput {
     let isLoading: AsyncStream<Bool>
     let targetImage: UIImage
-    let ocrResult: AsyncStream<String>
+    let ocrResult: AsyncStream<[String]>
 }
 
 // MARK: - OCRViewModel
@@ -58,8 +58,8 @@ final class OCRViewModel: OCRViewModelType {
         isLoadingContinuation = $0
     }
     
-    private var ocrResultContinuation: AsyncStream<String>.Continuation?
-    private lazy var ocrResultStream: AsyncStream<String> = .init {
+    private var ocrResultContinuation: AsyncStream<[String]>.Continuation?
+    private lazy var ocrResultStream: AsyncStream<[String]> = .init {
         ocrResultContinuation = $0
     }
 }
@@ -71,7 +71,7 @@ private extension OCRViewModel {
             for await _ in viewDidLoad {
                 isLoadingContinuation?.yield(true)
                 let result = (try? await processor.process(targetImage)) ?? []
-                ocrResultContinuation?.yield(result.joined(separator: "\n"))
+                ocrResultContinuation?.yield(result)
                 isLoadingContinuation?.yield(false)
             }
         }
