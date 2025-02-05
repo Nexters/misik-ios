@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import PhotosUI
 import CoreGraphics
 
 class ViewController: UIViewController {
@@ -67,7 +68,7 @@ private extension ViewController {
     }
     
     func didTapAlbum(action: UIAction) {
-        presentImagePickerViewController(sourceType: .photoLibrary)
+        presentPHPickerViewController()
     }
     
     func didTapOCR(action: UIAction) {
@@ -76,15 +77,25 @@ private extension ViewController {
     
     func presentImagePickerViewController(sourceType: UIImagePickerController.SourceType) {
         guard UIImagePickerController.isSourceTypeAvailable(sourceType) else {
-            print("\(sourceType == .camera ? "카메라" : "앨범"))를 사용할 수 없습니다.")
+            print("카메라를 사용할 수 없습니다.")
             return
         }
-        let imagePicker = UIImagePickerController()
-        imagePicker.sourceType = sourceType
-        imagePicker.delegate = self
-        imagePicker.allowsEditing = false
-        imagePicker.modalPresentationStyle = .fullScreen
-        present(imagePicker, animated: true)
+        let picker = UIImagePickerController()
+        picker.sourceType = sourceType
+        picker.allowsEditing = false
+        picker.modalPresentationStyle = .fullScreen
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+    
+    func presentPHPickerViewController() {
+        var configuration = PHPickerConfiguration()
+        configuration.selectionLimit = 1
+        configuration.filter = .any(of: [.images, .livePhotos])
+        let picker = PHPickerViewController(configuration: configuration)
+        picker.modalPresentationStyle = .fullScreen
+        picker.delegate = self
+        present(picker, animated: true, completion: nil)
     }
     
     func presentOCRViewController(targetImage: UIImage) {
@@ -113,10 +124,10 @@ private extension ViewController {
 extension ViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-        picker.dismiss(animated: true, completion: { [weak self] in
+        picker.dismiss(animated: true) { [weak self] in
             guard let self, let targetImage = info[.originalImage] as? UIImage else { return }
             presentOCRViewController(targetImage: targetImage)
-        })
+        }
     }
     
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
@@ -124,7 +135,24 @@ extension ViewController: UIImagePickerControllerDelegate, UINavigationControlle
     }
 }
 
-// MARK: - OCRViewController
+// MARK: - PHPickerViewControllerDelegate
+extension ViewController: PHPickerViewControllerDelegate {
+    
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        picker.dismiss(animated: true) { [weak self] in
+            guard let provider = results.first?.itemProvider,
+                  provider.canLoadObject(ofClass: UIImage.self) else { return }
+            provider.loadObject(ofClass: UIImage.self) { [weak self] image, error in
+                guard let selectedImage = image as? UIImage else { return }
+                DispatchQueue.main.async {
+                    self?.presentOCRViewController(targetImage: selectedImage)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - OCRViewController.Delegate
 extension ViewController: OCRViewController.Delegate {
     
     func ocrViewController(_ controller: OCRViewController, didFinishOCR result: [String]) {
