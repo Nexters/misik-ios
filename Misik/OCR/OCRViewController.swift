@@ -86,18 +86,6 @@ final class OCRViewController: UIViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-    
-    private let demoOCRResultLabel: UILabel = {
-        let label = UILabel()
-        label.numberOfLines = 0
-        label.font = .systemFont(ofSize: 10, weight: .medium)
-        label.textColor = .systemRed
-        label.text = ""
-        label.isHidden = true
-        label.backgroundColor = .white?.withAlphaComponent(0.7)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
 }
 
 private extension OCRViewController {
@@ -109,8 +97,6 @@ private extension OCRViewController {
         view.addSubview(scanningView)
         view.addSubview(infoLabel)
         view.addSubview(closeButtonView)
-        
-        imageView.addSubview(demoOCRResultLabel)
         
         NSLayoutConstraint.activate([
             imageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -129,10 +115,6 @@ private extension OCRViewController {
             
             infoLabel.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -50),
             infoLabel.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor),
-            
-            demoOCRResultLabel.leadingAnchor.constraint(equalTo: imageView.leadingAnchor, constant: 30),
-            demoOCRResultLabel.trailingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: -30),
-            demoOCRResultLabel.centerYAnchor.constraint(equalTo: imageView.centerYAnchor),
         ])
     }
     
@@ -149,7 +131,6 @@ private extension OCRViewController {
         
         Task {
             for await result in output.ocrResult {
-                demoOCRResultLabel.text = result.joined(separator: "\n")
                 delegate?.ocrViewController(self, didFinishOCR: result)
             }
         }.regist(&store, id: "Result")
@@ -160,13 +141,11 @@ private extension OCRViewController {
     func startLoading() {
         scanningView.isHidden = false
         infoLabel.isHidden = false
-        demoOCRResultLabel.isHidden = true
     }
     
     func stopLoading() {
         scanningView.isHidden = true
         infoLabel.isHidden = true
-        demoOCRResultLabel.isHidden = false
     }
     
     func didTapCloseButton() {
