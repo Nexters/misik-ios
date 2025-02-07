@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import Lottie
 
 final class OCRViewController: UIViewController {
     
@@ -59,9 +60,10 @@ final class OCRViewController: UIViewController {
         return view
     }()
     
-    private let scanningView: UIImageView = {
-        let view = UIImageView(image: UIImage(named: "Scan"))
+    private let scanningView: LottieAnimationView = {
+        let view = LottieAnimationView(animation: LottieAnimation.named("scan"))
         view.isHidden = true
+        view.loopMode = .loop
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -105,8 +107,9 @@ private extension OCRViewController {
             imageView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             
             scanningView.widthAnchor.constraint(equalTo: view.safeAreaLayoutGuide.widthAnchor),
+            scanningView.heightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.heightAnchor),
             scanningView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor),
-            scanningView.centerYAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerYAnchor, constant: -32),
+            scanningView.centerYAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerYAnchor),
             
             closeButtonView.widthAnchor.constraint(equalToConstant: 38),
             closeButtonView.heightAnchor.constraint(equalToConstant: 38),
@@ -140,10 +143,12 @@ private extension OCRViewController {
     
     func startLoading() {
         scanningView.isHidden = false
+        scanningView.play()
         infoLabel.isHidden = false
     }
     
     func stopLoading() {
+        scanningView.stop()
         scanningView.isHidden = true
         infoLabel.isHidden = true
     }
