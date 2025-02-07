@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		1CF8F86C2D56411E0087ABCD /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 1CF8F86B2D56411E0087ABCD /* Lottie */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		1CFE4DEA2D4916CF00A7D93F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1CF8F86C2D56411E0087ABCD /* Lottie in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -103,6 +108,7 @@
 			);
 			name = Misik;
 			packageProductDependencies = (
+				1CF8F86B2D56411E0087ABCD /* Lottie */,
 			);
 			productName = Misik;
 			productReference = 1CFE4DD32D4916CD00A7D93F /* Misik.app */;
@@ -159,6 +165,9 @@
 			);
 			mainGroup = 1CFE4DCA2D4916CD00A7D93F;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				1CF8F86A2D56411E0087ABCD /* XCRemoteSwiftPackageReference "lottie-spm" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 1CFE4DD42D4916CD00A7D93F /* Products */;
 			projectDirPath = "";
@@ -487,6 +496,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		1CF8F86A2D56411E0087ABCD /* XCRemoteSwiftPackageReference "lottie-spm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/airbnb/lottie-spm";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.5.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		1CF8F86B2D56411E0087ABCD /* Lottie */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1CF8F86A2D56411E0087ABCD /* XCRemoteSwiftPackageReference "lottie-spm" */;
+			productName = Lottie;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 1CFE4DCB2D4916CD00A7D93F /* Project object */;
 }
