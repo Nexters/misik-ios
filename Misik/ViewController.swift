@@ -25,6 +25,8 @@ class ViewController: UIViewController {
         .init(name: "Camera", action: didTapCamera),
         .init(name: "Album", action: didTapAlbum),
         .init(name: "OCR", action: didTapOCR),
+        .init(name: "WebView > Production", action: didTapWebViewProd),
+        .init(name: "WebView > Debug", action: didTapWebViewDebug),
     ]
 
     override func viewDidLoad() {
@@ -73,6 +75,19 @@ private extension ViewController {
     
     func didTapOCR(action: UIAction) {
         didTapCamera(action: action)
+    }
+    
+    func didTapWebViewProd(action: UIAction) {
+        let url = URL(string: "https://misik-web.vercel.app")!
+        let vc = WebViewController(wewbViewURL: url)
+        vc.modalPresentationStyle = .fullScreen
+        present(vc, animated: true)
+    }
+    
+    func didTapWebViewDebug(action: UIAction) {
+        let vc = DebugWebViewController()
+        vc.modalPresentationStyle = .fullScreen
+        present(vc, animated: true)
     }
     
     func presentImagePickerViewController(sourceType: UIImagePickerController.SourceType) {
@@ -158,4 +173,8 @@ extension ViewController: OCRViewController.Delegate {
     func ocrViewController(_ controller: OCRViewController, didFinishOCR result: [String]) {
         print(result)
     }
+}
+
+#Preview {
+    ViewController()
 }
