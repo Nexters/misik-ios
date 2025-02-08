@@ -32,7 +32,7 @@ class WebViewCommandSender {
             return
         }
         
-        let jsCode = "window.response.\(functionName)(\(jsonString));"
+        let jsCode = "window.response.\(functionName)(\"\(jsonString)\");"
         
         DispatchQueue.main.async {
             self.webView.evaluateJavaScript(jsCode) { result, error in
