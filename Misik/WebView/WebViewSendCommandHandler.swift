@@ -26,13 +26,13 @@ class WebViewCommandSender {
     
     /// JavaScript 함수 호출을 수행하는 메서드
     private func callJavaScript(functionName: String, params: Any) {
-        guard let jsonData = try? JSONSerialization.data(withJSONObject: params, options: []),
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: params, options: [.withoutEscapingSlashes]),
               let jsonString = String(data: jsonData, encoding: .utf8) else {
             print("JSON 직렬화 실패")
             return
         }
         
-        let jsCode = "window.response.\(functionName)(\"\(jsonString)\");"
+        let jsCode = "window.response.\(functionName)('\(jsonString)');"
         
         DispatchQueue.main.async {
             self.webView.evaluateJavaScript(jsCode) { result, error in
