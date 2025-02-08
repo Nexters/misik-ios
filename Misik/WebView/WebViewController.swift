@@ -5,6 +5,7 @@
 	
 
 import UIKit
+import PhotosUI
 import WebKit
 import SwiftUI
 
@@ -61,9 +62,9 @@ extension WebViewController: WKScriptMessageHandler {
         
         switch command {
             case .openCamera:
-                presentImagePickerViewController(sourceType: .camera)
+                presentImagePickerViewController()
             case .openGallery:
-                presentImagePickerViewController(sourceType: .photoLibrary)
+                presentPHPickerViewController()
             case .share:
                 let activityVC = UIActivityViewController(activityItems: ["Nexters 미식 스튜디오! 앱 오픈까지 많은 관심 부탁드립니닷"], applicationActivities: nil)
                 present(activityVC, animated: true, completion: nil)
@@ -91,17 +92,27 @@ extension WebViewController: WKScriptMessageHandler {
 
 // MARK: - Navigation
 extension WebViewController {
-    func presentImagePickerViewController(sourceType: UIImagePickerController.SourceType) {
-        guard UIImagePickerController.isSourceTypeAvailable(sourceType) else {
-            print("\(sourceType == .camera ? "카메라" : "앨범"))를 사용할 수 없습니다.")
+    func presentImagePickerViewController() {
+        guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
+            print("카메라를 사용할 수 없습니다.")
             return
         }
         let imagePicker = UIImagePickerController()
-        imagePicker.sourceType = sourceType
+        imagePicker.sourceType = .camera
         imagePicker.delegate = self
         imagePicker.allowsEditing = false
         imagePicker.modalPresentationStyle = .fullScreen
         present(imagePicker, animated: true)
+    }
+    
+    func presentPHPickerViewController() {
+        var configuration = PHPickerConfiguration()
+        configuration.selectionLimit = 1
+        configuration.filter = .any(of: [.images, .livePhotos])
+        let picker = PHPickerViewController(configuration: configuration)
+        picker.modalPresentationStyle = .fullScreen
+        picker.delegate = self
+        present(picker, animated: true, completion: nil)
     }
     
     func presentOCRViewController(targetImage: UIImage) {
@@ -129,6 +140,23 @@ extension WebViewController: UIImagePickerControllerDelegate, UINavigationContro
     
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
         picker.dismiss(animated: true)
+    }
+}
+
+// MARK: - PHPickerViewControllerDelegate
+extension WebViewController: PHPickerViewControllerDelegate {
+    
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        picker.dismiss(animated: true) { [weak self] in
+            guard let provider = results.first?.itemProvider,
+                  provider.canLoadObject(ofClass: UIImage.self) else { return }
+            provider.loadObject(ofClass: UIImage.self) { [weak self] image, error in
+                guard let selectedImage = image as? UIImage else { return }
+                DispatchQueue.main.async {
+                    self?.presentOCRViewController(targetImage: selectedImage)
+                }
+            }
+        }
     }
 }
 
