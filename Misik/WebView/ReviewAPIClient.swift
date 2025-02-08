@@ -58,7 +58,7 @@ class ReviewAPIClient {
         var request = createReviewRequest(for: ocrParsingURL, httpMethod: "POST")
         
         let requestBody = OCRParsingRequest(text: ocrText)
-        
+        request.httpBody = try JSONEncoder().encode(requestBody)
         let (data, response) = try await URLSession.shared.data(for: request)
         return try handleResponse(data: data, response: response)
     }
