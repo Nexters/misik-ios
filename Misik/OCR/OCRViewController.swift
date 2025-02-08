@@ -126,8 +126,6 @@ private extension OCRViewController {
             for await isLoading in output.isLoading {
                 if isLoading {
                     startLoading()
-                } else {
-                    stopLoading()
                 }
             }
         }.regist(&store, id: "Loading")
@@ -145,12 +143,6 @@ private extension OCRViewController {
         scanningView.isHidden = false
         scanningView.play()
         infoLabel.isHidden = false
-    }
-    
-    func stopLoading() {
-        scanningView.stop()
-        scanningView.isHidden = true
-        infoLabel.isHidden = true
     }
     
     func didTapCloseButton() {
