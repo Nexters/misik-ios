@@ -53,7 +53,7 @@ class ReviewAPIClient {
     }
     
     /// OCR 파싱 요청 (POST)
-    func parseOCRText(ocrText: String) async throws -> OCRParsingResponse {
+    func parseOCRText(ocrText: String) async throws -> String {
         let ocrParsingURL = baseURL.appendingPathComponent("ocr-parsing")
         var request = createReviewRequest(for: ocrParsingURL, httpMethod: "POST")
         
@@ -88,6 +88,31 @@ class ReviewAPIClient {
                 case 200..<300:
                     print("\(httpResponse.url) \nAPI Success \(String(data: data, encoding: .utf8))")
                     return try JSONDecoder().decode(T.self, from: data)
+                case 400:
+                    let errorResponse = try JSONDecoder().decode(ReviewErrorResponse.self, from: data)
+                    throw ReviewAPIError.badRequest(message: errorResponse.message)
+                default:
+                    throw ReviewAPIError.unexpected(statusCode: httpResponse.statusCode)
+            }
+        } catch {
+            print("\(httpResponse.url) \nAPI ERROR \(error) \(String(data: data, encoding: .utf8))")
+            throw error
+        }
+    }
+    
+    private func handleResponse(data: Data, response: URLResponse) throws -> String {
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw ReviewAPIError.invalidResponse
+        }
+
+        do {
+            switch httpResponse.statusCode {
+                case 200..<300:
+                    print("\(httpResponse.url) \nAPI Success \(String(data: data, encoding: .utf8))")
+                    guard let str = String(data: data, encoding: .utf8) else {
+                        throw ReviewAPIError.invalidResponse
+                    }
+                    return str
                 case 400:
                     let errorResponse = try JSONDecoder().decode(ReviewErrorResponse.self, from: data)
                     throw ReviewAPIError.badRequest(message: errorResponse.message)
