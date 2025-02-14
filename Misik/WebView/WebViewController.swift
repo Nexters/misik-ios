@@ -169,15 +169,7 @@ extension WebViewController: OCRViewController.Delegate {
                 return
             }
             
-            // TODO: 포멧 최적화 필요
-            let formatted = polished.parsed.compactMap { item -> [String : String]? in
-                guard let key = item["key"], let value = item["value"] else {
-                    return nil
-                }
-                return [key : value]
-            }
-            
-            webviewCommandSender.sendScanResults(results: formatted)
+            webviewCommandSender.sendScanResults(results: polished)
             dismiss(animated: true)
         }
     }
@@ -217,7 +209,7 @@ extension DebugWebViewController {
                     },
                     receiveScanResult: function(results) {
                         console.log("📩 iOS에서 받은 스캔 결과:", results);
-                        document.getElementById("scanOutput").innerText = "받은 스캔 결과: " + JSON.stringify(results);
+                        document.getElementById("scanOutput").innerText = results;
                     }
                 };
 
