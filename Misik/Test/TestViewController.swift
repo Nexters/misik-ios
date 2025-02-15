@@ -173,6 +173,10 @@ extension TestViewController: OCRViewController.Delegate {
     func ocrViewController(_ controller: OCRViewController, didFinishOCR result: [String]) {
         print(result)
     }
+    
+    func ocrViewControllerDidDismiss() {
+        print("didDismiss")
+    }
 }
 
 #Preview {
