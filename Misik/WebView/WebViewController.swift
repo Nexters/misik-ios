@@ -11,14 +11,12 @@ import SwiftUI
 
 class WebViewController: UIViewController {
     fileprivate var webView: WKWebView!
-    private let url: URL
     private let webViewContentController = WKUserContentController()
     private let reviewAPIClient = ReviewAPIClient()
     private lazy var webviewCommandSender: WebViewCommandSender = .init(webView: webView)
     private var store: TaskStore = .init()
     
-    init(url: URL) {
-        self.url = url
+    init() {
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -29,8 +27,7 @@ class WebViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupWebView()
-        loadWebView()
-        setupTestFeature()
+        setupWebViewURL()
     }
 
     private func setupWebView() {
@@ -39,57 +36,28 @@ class WebViewController: UIViewController {
         let config = WKWebViewConfiguration()
         config.userContentController = webViewContentController
 
-        webView = WKWebView(frame: .zero, configuration: config)
+        webView = WKWebView(frame: view.bounds, configuration: config)
         view.addSubview(webView)
-        
-        // TODO: 웹뷰 Safe Area 적용 되면 변경하기
-        webView.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            webView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            webView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            webView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            webView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-        ])
     }
     
-    fileprivate func loadWebView() {
-        webView.load(URLRequest(url: url))
-    }
-    
-    private func setupTestFeature() {
-        view.addSubview(testFeatureButton)
-        view.bringSubviewToFront(testFeatureButton)
-        
-        NSLayoutConstraint.activate([
-            testFeatureButton.widthAnchor.constraint(equalToConstant: 30),
-            testFeatureButton.heightAnchor.constraint(equalToConstant: 30),
-            testFeatureButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            testFeatureButton.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-        ])
-    }
-    
-    private var testFeatureTriggerCounter: Int = .zero
-    private let maxTestFeatureTriggerCounter: Int = 5
-    private lazy var testFeatureButton: UIButton = {
-        let button = UIButton()
-        button.addAction(.init(handler: didTapTestFeatureButton), for: .touchUpInside)
-        button.backgroundColor = .clear
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
-    }()
-    
-    private func didTapTestFeatureButton(_ action: UIAction) {
-        if testFeatureTriggerCounter == maxTestFeatureTriggerCounter {
-            testFeatureTriggerCounter = .zero
-            presentTestViewController()
-            return
+    private func setupWebViewURL() {
+        Task {
+            do {
+                let urlResponse = try await reviewAPIClient.getWebViewURL()
+                guard let url = URL(string: urlResponse.url) else {
+                    print("URL이 잘못 내려오고 있습니다")
+                    return
+                }
+                self.loadWebView(url: url)
+            } catch {
+                
+            }
+            
         }
-        testFeatureTriggerCounter += 1
     }
     
-    private func presentTestViewController() {
-        let viewController = TestViewController()
-        present(viewController, animated: true)
+    fileprivate func loadWebView(url: URL) {
+        webView.load(URLRequest(url: url))
     }
 }
 
@@ -103,6 +71,7 @@ extension WebViewController: WKScriptMessageHandler {
             case .openGallery:
                 presentPHPickerViewController()
             case .share:
+                // TODO: 앱스토어 URL 전달받기
                 let activityVC = UIActivityViewController(activityItems: ["Nexters 미식 스튜디오! 앱 오픈까지 많은 관심 부탁드립니닷"], applicationActivities: nil)
                 present(activityVC, animated: true, completion: nil)
             case .createReview(let body):
@@ -212,79 +181,10 @@ extension WebViewController: OCRViewController.Delegate {
     }
     
     func ocrViewControllerDidDismiss() {
-        
         store.cancel(id: .parseAndSendOCRResult)
     }
 }
 
 private extension TaskStore.TaskID {
-    
     static let parseAndSendOCRResult: String = "ParseAndSendOCRResult"
-}
-
-// MARK: - DebugWebViewController
-class DebugWebViewController: WebViewController {
-    
-    init() {
-        super.init(url: URL(string: "https://misik-web.vercel.app")!)
-    }
-    
-    @MainActor required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    override func loadWebView() {
-        webView.loadHTMLString(debug, baseURL: nil)
-    }
-}
-
-extension DebugWebViewController {
-    var debug: String {
-                """
-        <!DOCTYPE html>
-        <html lang="ko">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>WebView Command Test</title>
-            <script>
-                // iOS에서 실행될 JavaScript 이벤트 수신기
-                window.response = {
-                    receiveGeneratedReview: function(review) {
-                        console.log("📩 iOS에서 받은 리뷰:", review);
-                        document.getElementById("reviewOutput").innerText = "받은 리뷰: " + review.result;
-                    },
-                    receiveScanResult: function(results) {
-                        console.log("📩 iOS에서 받은 스캔 결과:", results);
-                        document.getElementById("scanOutput").innerText = results;
-                    }
-                };
-
-                function sendCommand(command, body = {}) {
-                    if (window.webkit && window.webkit.messageHandlers[command]) {
-                        window.webkit.messageHandlers[command].postMessage(body);
-                        console.log("📤 iOS로 명령 전송:", command, body);
-                    } else {
-                        console.error("⚠️ iOS 핸들러가 등록되지 않음:", command);
-                    }
-                }
-            </script>
-        </head>
-        <body>
-            <h2>WebView Command Test</h2>
-            
-            <button onclick="sendCommand('openCamera')">📸 카메라 열기</button>
-            <button onclick="sendCommand('openGallery')">🖼️ 갤러리 열기</button>
-            <button onclick="sendCommand('share')">📤 공유하기</button>
-            <button onclick="sendCommand('createReview', { ocrText: '품명 카야토스트+음료세트', hashTag: ['특별한 메뉴가 있어요'], reviewStyle: 'CUTE' })">📝 리뷰 생성</button>
-            <button onclick="sendCommand('copy', { review: '복사할 내용' })">📋 복사하기</button>
-
-            <h3>📨 iOS에서 받은 데이터</h3>
-            <p id="reviewOutput">받은 리뷰: 없음</p>
-            <p id="scanOutput">받은 스캔 결과: 없음</p>
-        </body>
-        </html>
-
-        """
-    }
 }
