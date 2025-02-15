@@ -105,7 +105,7 @@ private extension OCRViewController {
         view.addSubview(scanningView)
         view.addSubview(gradientView)
         view.addSubview(closeButtonView)
-        gradientView.addSubview(infoLabel)
+        view.addSubview(infoLabel)
         
         NSLayoutConstraint.activate([
             imageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -138,7 +138,7 @@ private extension OCRViewController {
     
     func setupGradient() {
         gradientView.layoutIfNeeded()
-        gradientView.setGradient(color1: .clear, color2: .gray500)
+        gradientView.setGradient(color1: .clear, color2: .gray600)
     }
     
     func bindUI(_ output: OCRViewModelOutput) {
