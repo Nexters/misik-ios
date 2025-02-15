@@ -8,6 +8,4 @@
 import Foundation
 
 enum Constant {
-    
-    static let webURLString: String = "https://misik-web.vercel.app"
 }
