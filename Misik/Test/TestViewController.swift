@@ -9,7 +9,7 @@ import UIKit
 import PhotosUI
 import CoreGraphics
 
-class ViewController: UIViewController {
+final class TestViewController: UIViewController {
     
     private let stackView: UIStackView = {
         let view = UIStackView()
@@ -36,7 +36,7 @@ class ViewController: UIViewController {
     
 }
 
-private extension ViewController {
+private extension TestViewController {
     
     func setupUI() {
         view.backgroundColor = .white
@@ -79,7 +79,7 @@ private extension ViewController {
     
     func didTapWebViewProd(action: UIAction) {
         let url = URL(string: "https://misik-web.vercel.app")!
-        let vc = WebViewController(wewbViewURL: url)
+        let vc = WebViewController(url: url)
         vc.modalPresentationStyle = .fullScreen
         present(vc, animated: true)
     }
@@ -126,7 +126,7 @@ private extension ViewController {
     }
 }
 
-private extension ViewController {
+private extension TestViewController {
     
     struct Feature {
         let name: String
@@ -136,7 +136,7 @@ private extension ViewController {
 
 
 // MARK: - UIImagePickerControllerDelegate
-extension ViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
+extension TestViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         picker.dismiss(animated: true) { [weak self] in
@@ -151,7 +151,7 @@ extension ViewController: UIImagePickerControllerDelegate, UINavigationControlle
 }
 
 // MARK: - PHPickerViewControllerDelegate
-extension ViewController: PHPickerViewControllerDelegate {
+extension TestViewController: PHPickerViewControllerDelegate {
     
     func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
         picker.dismiss(animated: true) { [weak self] in
@@ -168,7 +168,7 @@ extension ViewController: PHPickerViewControllerDelegate {
 }
 
 // MARK: - OCRViewController.Delegate
-extension ViewController: OCRViewController.Delegate {
+extension TestViewController: OCRViewController.Delegate {
     
     func ocrViewController(_ controller: OCRViewController, didFinishOCR result: [String]) {
         print(result)
@@ -176,5 +176,5 @@ extension ViewController: OCRViewController.Delegate {
 }
 
 #Preview {
-    ViewController()
+    TestViewController()
 }
