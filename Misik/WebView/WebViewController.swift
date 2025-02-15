@@ -11,14 +11,14 @@ import SwiftUI
 
 class WebViewController: UIViewController {
     fileprivate var webView: WKWebView!
-    private let webViewURL: URL
+    private let url: URL
     private let webViewContentController = WKUserContentController()
     private let reviewAPIClient = ReviewAPIClient()
     private lazy var webviewCommandSender: WebViewCommandSender = .init(webView: webView)
     
     
-    init(wewbViewURL: URL) {
-        self.webViewURL = wewbViewURL
+    init(url: URL) {
+        self.url = url
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -30,6 +30,7 @@ class WebViewController: UIViewController {
         super.viewDidLoad()
         setupWebView()
         loadWebView()
+        setupTestFeature()
     }
 
     private func setupWebView() {
@@ -52,7 +53,43 @@ class WebViewController: UIViewController {
     }
     
     fileprivate func loadWebView() {
-        webView.load(URLRequest(url: webViewURL))
+        webView.load(URLRequest(url: url))
+    }
+    
+    private func setupTestFeature() {
+        view.addSubview(testFeatureButton)
+        view.bringSubviewToFront(testFeatureButton)
+        
+        NSLayoutConstraint.activate([
+            testFeatureButton.widthAnchor.constraint(equalToConstant: 30),
+            testFeatureButton.heightAnchor.constraint(equalToConstant: 30),
+            testFeatureButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            testFeatureButton.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+        ])
+    }
+    
+    private var testFeatureTriggerCounter: Int = .zero
+    private let maxTestFeatureTriggerCounter: Int = 5
+    private lazy var testFeatureButton: UIButton = {
+        let button = UIButton()
+        button.addAction(.init(handler: didTapTestFeatureButton), for: .touchUpInside)
+        button.backgroundColor = .clear
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+    
+    private func didTapTestFeatureButton(_ action: UIAction) {
+        if testFeatureTriggerCounter == maxTestFeatureTriggerCounter {
+            testFeatureTriggerCounter = .zero
+            presentTestViewController()
+            return
+        }
+        testFeatureTriggerCounter += 1
+    }
+    
+    private func presentTestViewController() {
+        let viewController = TestViewController()
+        present(viewController, animated: true)
     }
 }
 
@@ -179,7 +216,7 @@ extension WebViewController: OCRViewController.Delegate {
 class DebugWebViewController: WebViewController {
     
     init() {
-        super.init(wewbViewURL: URL(string: "https://misik-web.vercel.app")!)
+        super.init(url: URL(string: "https://misik-web.vercel.app")!)
     }
     
     @MainActor required init?(coder: NSCoder) {
