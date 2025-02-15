@@ -15,8 +15,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         window = UIWindow(windowScene: windowScene)
-        guard let url: URL = URL(string: Constant.webURLString) else { return }
-        let rootViewController = WebViewController(url: url)
+        let rootViewController = WebViewController()
         window?.rootViewController = rootViewController
         window?.makeKeyAndVisible()
     }
