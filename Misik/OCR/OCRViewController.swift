@@ -13,6 +13,7 @@ final class OCRViewController: UIViewController {
     protocol Delegate: AnyObject {
         
         func ocrViewController(_ controller: OCRViewController, didFinishOCR result: [String])
+        func ocrViewControllerDidDismiss()
     }
     
     weak var delegate: Delegate?
@@ -20,10 +21,6 @@ final class OCRViewController: UIViewController {
     init(viewModel: any OCRViewModelType) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
-    }
-    
-    deinit {
-        store.cancelAll()
     }
     
     @available(*, unavailable)
@@ -151,13 +148,13 @@ private extension OCRViewController {
                     startLoading()
                 }
             }
-        }.regist(&store, id: "Loading")
+        }.regist(&store)
         
         Task {
             for await result in output.ocrResult {
                 delegate?.ocrViewController(self, didFinishOCR: result)
             }
-        }.regist(&store, id: "Result")
+        }.regist(&store)
         
         imageView.image = output.targetImage
     }
@@ -169,7 +166,19 @@ private extension OCRViewController {
     }
     
     func didTapCloseButton() {
-        dismiss(animated: true)
+        clear()
+        dismiss()
+    }
+    
+    func clear() {
+        viewModel.clear()
+        store.cancelAll()
+    }
+    
+    func dismiss() {
+        dismiss(animated: true) { [weak self] in
+            self?.delegate?.ocrViewControllerDidDismiss()
+        }
     }
 }
 

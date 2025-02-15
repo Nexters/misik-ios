@@ -13,6 +13,7 @@ import Combine
 protocol OCRViewModelType: AnyObject {
 
     func transform(input: OCRViewModelInput) -> OCRViewModelOutput
+    func clear()
 }
 
 // MARK: - OCRViewModelInput
@@ -35,7 +36,7 @@ final class OCRViewModel: OCRViewModelType {
         self.processor = processor
     }
     
-    deinit {
+    func clear() {
         store.cancelAll()
     }
     
@@ -75,6 +76,6 @@ private extension OCRViewModel {
                 isLoadingContinuation?.yield(false)
             }
         }
-        .regist(&store, id: "ViewDidLoad")
+        .regist(&store)
     }
 }

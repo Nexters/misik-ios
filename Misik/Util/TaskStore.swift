@@ -14,15 +14,28 @@ struct TaskStore {
     private(set) var tasks: [TaskID: Task<Void, Error>] = [:]
     
     mutating func regist(id: TaskID, _ task: Task<Void, Error>) {
-        tasks[id] = task
+        syncQueue.sync {
+            tasks[id] = task
+        }
     }
     
     mutating func cancelAll() {
-        for task in tasks.values {
-            task.cancel()
+        syncQueue.sync {
+            for task in tasks.values {
+                task.cancel()
+            }
+            tasks.removeAll()
         }
-        tasks.removeAll()
     }
+    
+    mutating func cancel(id: TaskID) {
+        syncQueue.sync {
+            tasks[id]?.cancel()
+            tasks.removeValue(forKey: id)
+        }
+    }
+    
+    private let syncQueue = DispatchQueue(label: "com.misikstudio.Misik.TaskStore")
 }
 
 extension Task<Void, Error> {

@@ -15,7 +15,7 @@ class WebViewController: UIViewController {
     private let webViewContentController = WKUserContentController()
     private let reviewAPIClient = ReviewAPIClient()
     private lazy var webviewCommandSender: WebViewCommandSender = .init(webView: webView)
-    
+    private var store: TaskStore = .init()
     
     init(url: URL) {
         self.url = url
@@ -208,8 +208,18 @@ extension WebViewController: OCRViewController.Delegate {
             
             webviewCommandSender.sendScanResults(results: polished)
             dismiss(animated: true)
-        }
+        }.regist(&store, id: .parseAndSendOCRResult)
     }
+    
+    func ocrViewControllerDidDismiss() {
+        
+        store.cancel(id: .parseAndSendOCRResult)
+    }
+}
+
+private extension TaskStore.TaskID {
+    
+    static let parseAndSendOCRResult: String = "ParseAndSendOCRResult"
 }
 
 // MARK: - DebugWebViewController
