@@ -49,8 +49,10 @@ class WebViewController: UIViewController {
                     return
                 }
                 self.loadWebView(url: url)
-            } catch {
-                
+            } catch let error as ReviewAPIError {
+                if case let .updateRequired(urlStr) = error {
+                    showForceUpdateAlert(updateURL: urlStr)
+                }
             }
             
         }
@@ -59,6 +61,24 @@ class WebViewController: UIViewController {
     fileprivate func loadWebView(url: URL) {
         webView.load(URLRequest(url: url))
     }
+
+    /// 강제 업데이트 알럿 띄우기
+    private func showForceUpdateAlert(updateURL: String) {
+        let alert = UIAlertController(
+            title: nil,
+            message: "원활한 서비스 이용을 위해 업데이트가 필요해요",
+            preferredStyle: .alert
+        )
+
+        alert.addAction(UIAlertAction(title: "앱스토어로 이동", style: .default, handler: { _ in
+            if let url = URL(string: updateURL) {
+                UIApplication.shared.open(url, options: [:], completionHandler: nil)
+            }
+        }))
+        
+        self.present(alert, animated: true)
+    }
+
 }
 
 extension WebViewController: WKScriptMessageHandler {
