@@ -189,15 +189,26 @@ extension WebViewController: PHPickerViewControllerDelegate {
 // MARK: - OCRViewController
 extension WebViewController: OCRViewController.Delegate {
     func ocrViewController(_ controller: OCRViewController, didFinishOCR result: [String]) {
-        Task {
-            guard let polished = try? await reviewAPIClient.parseOCRText(ocrText: result.joined(separator: "\n")) else {
-                webviewCommandSender.sendScanResults(results: .init())
-                return
+        Task { [weak self] in
+            do {
+                guard let self else { return }
+                let polished = try await reviewAPIClient.parseOCRText(ocrText: result.joined(separator: "\n"))
+                dismiss(with: polished)
+            } catch {
+                guard let self else { return }
+                if let urlError = error as? URLError, urlError.code == .cancelled {
+                    dismiss(animated: true)
+                    return
+                }
+                dismiss(with: .init())
             }
-            
-            webviewCommandSender.sendScanResults(results: polished)
-            dismiss(animated: true)
         }.regist(&store, id: .parseAndSendOCRResult)
+    }
+    
+    func dismiss(with result: String) {
+        dismiss(animated: true) { [weak self] in
+            self?.webviewCommandSender.sendScanResults(results: result)
+        }
     }
     
     func ocrViewControllerDidDismiss() {
