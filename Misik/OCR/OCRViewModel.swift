@@ -13,7 +13,6 @@ import Combine
 protocol OCRViewModelType: AnyObject {
 
     func transform(input: OCRViewModelInput) -> OCRViewModelOutput
-    func clear()
 }
 
 // MARK: - OCRViewModelInput
@@ -36,7 +35,7 @@ final class OCRViewModel: OCRViewModelType {
         self.processor = processor
     }
     
-    func clear() {
+    deinit {
         store.cancelAll()
     }
     
@@ -68,8 +67,9 @@ final class OCRViewModel: OCRViewModelType {
 private extension OCRViewModel {
     
     func transform(viewDidLoad: AsyncStream<Void>) {
-        Task {
+        Task { [weak self] in
             for await _ in viewDidLoad {
+                guard let self else { return }
                 isLoadingContinuation?.yield(true)
                 let result = (try? await processor.process(targetImage)) ?? []
                 ocrResultContinuation?.yield(result)

@@ -23,6 +23,10 @@ final class OCRViewController: UIViewController {
         super.init(nibName: nil, bundle: nil)
     }
     
+    deinit {
+        store.cancelAll()
+    }
+    
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -142,17 +146,19 @@ private extension OCRViewController {
     }
     
     func bindUI(_ output: OCRViewModelOutput) {
-        Task {
+        Task { [weak self] in
             for await isLoading in output.isLoading {
+                guard let self else { return }
                 if isLoading {
-                    startLoading()
+                    self.startLoading()
                 }
             }
         }.regist(&store)
         
-        Task {
+        Task { [weak self] in
             for await result in output.ocrResult {
-                delegate?.ocrViewController(self, didFinishOCR: result)
+                guard let self else { return }
+                self.delegate?.ocrViewController(self, didFinishOCR: result)
             }
         }.regist(&store)
         
@@ -166,13 +172,7 @@ private extension OCRViewController {
     }
     
     func didTapCloseButton() {
-        clear()
         dismiss()
-    }
-    
-    func clear() {
-        viewModel.clear()
-        store.cancelAll()
     }
     
     func dismiss() {
