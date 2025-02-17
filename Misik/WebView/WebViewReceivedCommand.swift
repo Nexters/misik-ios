@@ -11,7 +11,7 @@ import WebKit
 enum WebViewReceivedCommand {
     case openCamera
     case openGallery
-    case share
+    case share(body: [String: Any?])
     case createReview(body: [String: Any?])
     case copy(body: [String: Any?])
 
@@ -29,7 +29,7 @@ enum WebViewReceivedCommand {
         switch message.name {
         case "openCamera": return .openCamera
         case "openGallery": return .openGallery
-        case "share": return .share
+        case "share": return .share(body: body)
         case "createReview": return .createReview(body: body)
         case "copy": return .copy(body: body)
         default: return nil

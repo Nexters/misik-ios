@@ -20,6 +20,10 @@ class WebViewController: UIViewController {
         super.init(nibName: nil, bundle: nil)
     }
     
+    deinit {
+        removeKeyboardObservers()
+    }
+    
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -28,6 +32,7 @@ class WebViewController: UIViewController {
         super.viewDidLoad()
         setupWebView()
         setupWebViewURL()
+        setupKeyboardObservers()
     }
 
     private func setupWebView() {
@@ -36,8 +41,15 @@ class WebViewController: UIViewController {
         let config = WKWebViewConfiguration()
         config.userContentController = webViewContentController
 
-        webView = WKWebView(frame: view.bounds, configuration: config)
+        webView = WKWebView(frame: .zero, configuration: config)
+        webView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(webView)
+        NSLayoutConstraint.activate([
+            webView.topAnchor.constraint(equalTo: view.topAnchor),
+            webView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            webView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
     }
     
     private func setupWebViewURL() {
@@ -78,7 +90,25 @@ class WebViewController: UIViewController {
         
         self.present(alert, animated: true)
     }
+    
+    private func setupKeyboardObservers() {
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow(_:)), name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide(_:)), name: UIResponder.keyboardWillHideNotification, object: nil)
+    }
+    
+    private func removeKeyboardObservers() {
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
+    }
+    
+    @objc private func keyboardWillShow(_ notification: Notification) {
+        guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+        webviewCommandSender.sendKeyboardHeight(height: "\(keyboardFrame.height)")
+    }
 
+    @objc private func keyboardWillHide(_ notification: Notification) {
+        webviewCommandSender.sendKeyboardHeight(height: "\(0)")
+    }
 }
 
 extension WebViewController: WKScriptMessageHandler {
@@ -90,9 +120,11 @@ extension WebViewController: WKScriptMessageHandler {
                 presentImagePickerViewController()
             case .openGallery:
                 presentPHPickerViewController()
-            case .share:
-                // TODO: 앱스토어 URL 전달받기
-                let activityVC = UIActivityViewController(activityItems: ["Nexters 미식 스튜디오! 앱 오픈까지 많은 관심 부탁드립니닷"], applicationActivities: nil)
+            case let .share(body):
+                let activityItems = [
+                    (body["shareText"] as? String)
+                ].compactMap { $0 }
+                let activityVC = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
                 present(activityVC, animated: true, completion: nil)
             case .createReview(let body):
                 Task {

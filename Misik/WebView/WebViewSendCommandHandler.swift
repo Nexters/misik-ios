@@ -28,6 +28,11 @@ class WebViewCommandSender {
         callJavaScript(functionName: "receiveGeneratedReview", params: ["result" : checkedResult])
     }
     
+    /// 키보드 height 값을 웹뷰의 JavaScript 함수로 전달
+    func sendKeyboardHeight(height: String) {
+        callJavaScript(functionName: "receiveKeyboardHeight", params: ["height": height])
+    }
+    
     /// JavaScript 함수 호출을 수행하는 메서드
     private func callJavaScript(functionName: String, params: Any) {
         
