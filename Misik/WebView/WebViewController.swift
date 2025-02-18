@@ -10,7 +10,14 @@ import WebKit
 import SwiftUI
 
 class WebViewController: UIViewController {
-    fileprivate var webView: WKWebView!
+    fileprivate lazy var webView: WKWebView = {
+        let config = WKWebViewConfiguration()
+        config.userContentController = webViewContentController
+        webView = WKWebView(frame: .zero, configuration: config)
+        webView.backgroundColor = .white
+        webView.translatesAutoresizingMaskIntoConstraints = false
+        return webView
+    }()
     private let webViewContentController = WKUserContentController()
     private let reviewAPIClient = ReviewAPIClient()
     private lazy var webviewCommandSender: WebViewCommandSender = .init(webView: webView)
@@ -36,13 +43,8 @@ class WebViewController: UIViewController {
     }
 
     private func setupWebView() {
+        view.backgroundColor = .white
         WebViewReceivedCommand.register(in: webViewContentController, handler: self)
-
-        let config = WKWebViewConfiguration()
-        config.userContentController = webViewContentController
-
-        webView = WKWebView(frame: .zero, configuration: config)
-        webView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(webView)
         NSLayoutConstraint.activate([
             webView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
