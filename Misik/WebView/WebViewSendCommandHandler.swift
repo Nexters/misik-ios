@@ -36,7 +36,7 @@ class WebViewCommandSender {
     /// JavaScript 함수 호출을 수행하는 메서드
     private func callJavaScript(functionName: String, params: Any) {
         
-        let paramsStr: String
+        var paramsStr: String
         
         if let casted = params as? String {
             paramsStr = casted
@@ -49,10 +49,10 @@ class WebViewCommandSender {
             
             paramsStr = jsonString
         }
-        
+        paramsStr = paramsStr.replacingOccurrences(of: "'", with: "")
         let jsCode = "window.response.\(functionName)('\(paramsStr)');"
         
-        DispatchQueue.main.async {
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) {
             self.webView.evaluateJavaScript(jsCode) { result, error in
                 if let error = error {
                     print("JavaScript 실행 오류: \(error.localizedDescription)")
