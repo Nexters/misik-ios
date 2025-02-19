@@ -16,18 +16,27 @@ class WebViewCommandSender {
     
     /// Scan 결과를 웹뷰의 JavaScript 함수로 전달
     func sendScanResults(results: String) {
-        callJavaScript(functionName: "receiveScanResult", params: results)
+        // 에러일 경우, 기존 방식의 경우 빈 스트링을 내려주기로 했으나, "error" 로 내려주도록 변경됨.
+        let params = results == "" ? "error" : results
+        callJavaScript(functionName: "receiveScanResult", params: params)
     }
     
     /// 생성된 리뷰를 웹뷰의 JavaScript 함수로 전달
     func sendGeneratedReview(review: String) {
-        callJavaScript(functionName: "receiveGeneratedReview", params: ["result" : review])
+        // 에러일 경우, 기존 방식의 경우 빈 딕션어리를 내려주기로 했으나, "error" 로 내려주도록 변경됨.
+        let checkedResult = review == "" ? "error" : review
+        callJavaScript(functionName: "receiveGeneratedReview", params: ["result" : checkedResult])
+    }
+    
+    /// 키보드 height 값을 웹뷰의 JavaScript 함수로 전달
+    func sendKeyboardHeight(height: String) {
+        callJavaScript(functionName: "receiveKeyboardHeight", params: ["height": height])
     }
     
     /// JavaScript 함수 호출을 수행하는 메서드
     private func callJavaScript(functionName: String, params: Any) {
         
-        let paramsStr: String
+        var paramsStr: String
         
         if let casted = params as? String {
             paramsStr = casted
@@ -40,10 +49,10 @@ class WebViewCommandSender {
             
             paramsStr = jsonString
         }
-        
+        paramsStr = paramsStr.replacingOccurrences(of: "'", with: "")
         let jsCode = "window.response.\(functionName)('\(paramsStr)');"
         
-        DispatchQueue.main.async {
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) {
             self.webView.evaluateJavaScript(jsCode) { result, error in
                 if let error = error {
                     print("JavaScript 실행 오류: \(error.localizedDescription)")

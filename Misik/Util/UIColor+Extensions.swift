@@ -8,11 +8,11 @@
 import UIKit
 
 extension UIColor {
-    
-    static let textWhite: UIColor? = .init(hex: "#FFFFFF")
-    
-    
-    static let white: UIColor? = .init(hex: "#FFFFFF")
+    static let textWhite: UIColor = .init(hex: "#FFFFFF")!
+    static let white: UIColor = .init(hex: "#FFFFFF")!
+    static let black: UIColor = .init(hex: "#000000")!
+    static let gray500: UIColor = .init(hex: "#000000")!.withAlphaComponent(0.25)
+    static let gray600: UIColor = .init(hex: "#363642")!
 }
 
 extension UIColor {

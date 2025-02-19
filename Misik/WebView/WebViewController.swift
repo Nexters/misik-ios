@@ -10,16 +10,25 @@ import WebKit
 import SwiftUI
 
 class WebViewController: UIViewController {
-    fileprivate var webView: WKWebView!
-    private let webViewURL: URL
+    fileprivate lazy var webView: WKWebView = {
+        let config = WKWebViewConfiguration()
+        config.userContentController = webViewContentController
+        webView = WKWebView(frame: .zero, configuration: config)
+        webView.backgroundColor = .white
+        webView.translatesAutoresizingMaskIntoConstraints = false
+        return webView
+    }()
     private let webViewContentController = WKUserContentController()
     private let reviewAPIClient = ReviewAPIClient()
     private lazy var webviewCommandSender: WebViewCommandSender = .init(webView: webView)
+    private var store: TaskStore = .init()
     
-    
-    init(wewbViewURL: URL) {
-        self.webViewURL = wewbViewURL
+    init() {
         super.init(nibName: nil, bundle: nil)
+    }
+    
+    deinit {
+        removeKeyboardObservers()
     }
     
     required init?(coder: NSCoder) {
@@ -29,30 +38,78 @@ class WebViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupWebView()
-        loadWebView()
+        setupWebViewURL()
+        setupKeyboardObservers()
     }
 
     private func setupWebView() {
+        view.backgroundColor = .white
         WebViewReceivedCommand.register(in: webViewContentController, handler: self)
-
-        let config = WKWebViewConfiguration()
-        config.userContentController = webViewContentController
-
-        webView = WKWebView(frame: .zero, configuration: config)
         view.addSubview(webView)
-        
-        // TODO: 웹뷰 Safe Area 적용 되면 변경하기
-        webView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             webView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            webView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            webView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
             webView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            webView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
     }
     
-    fileprivate func loadWebView() {
-        webView.load(URLRequest(url: webViewURL))
+    private func setupWebViewURL() {
+        Task {
+            do {
+                let urlResponse = try await reviewAPIClient.getWebViewURL()
+                guard let url = URL(string: urlResponse.url) else {
+                    print("URL이 잘못 내려오고 있습니다")
+                    return
+                }
+                self.loadWebView(url: url)
+            } catch let error as ReviewAPIError {
+                if case let .updateRequired(urlStr) = error {
+                    showForceUpdateAlert(updateURL: urlStr)
+                }
+            }
+            
+        }
+    }
+    
+    fileprivate func loadWebView(url: URL) {
+        webView.load(URLRequest(url: url))
+    }
+
+    /// 강제 업데이트 알럿 띄우기
+    private func showForceUpdateAlert(updateURL: String) {
+        let alert = UIAlertController(
+            title: nil,
+            message: "원활한 서비스 이용을 위해 업데이트가 필요해요",
+            preferredStyle: .alert
+        )
+
+        alert.addAction(UIAlertAction(title: "앱스토어로 이동", style: .default, handler: { _ in
+            if let url = URL(string: updateURL) {
+                UIApplication.shared.open(url, options: [:], completionHandler: nil)
+            }
+        }))
+        
+        self.present(alert, animated: true)
+    }
+    
+    private func setupKeyboardObservers() {
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow(_:)), name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide(_:)), name: UIResponder.keyboardWillHideNotification, object: nil)
+    }
+    
+    private func removeKeyboardObservers() {
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
+    }
+    
+    @objc private func keyboardWillShow(_ notification: Notification) {
+        guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+        webviewCommandSender.sendKeyboardHeight(height: "\(keyboardFrame.height)")
+    }
+
+    @objc private func keyboardWillHide(_ notification: Notification) {
+        webviewCommandSender.sendKeyboardHeight(height: "\(0)")
     }
 }
 
@@ -65,8 +122,11 @@ extension WebViewController: WKScriptMessageHandler {
                 presentImagePickerViewController()
             case .openGallery:
                 presentPHPickerViewController()
-            case .share:
-                let activityVC = UIActivityViewController(activityItems: ["Nexters 미식 스튜디오! 앱 오픈까지 많은 관심 부탁드립니닷"], applicationActivities: nil)
+            case let .share(body):
+                let activityItems = [
+                    (body["shareText"] as? String)
+                ].compactMap { $0 }
+                let activityVC = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
                 present(activityVC, animated: true, completion: nil)
             case .createReview(let body):
                 Task {
@@ -163,81 +223,33 @@ extension WebViewController: PHPickerViewControllerDelegate {
 // MARK: - OCRViewController
 extension WebViewController: OCRViewController.Delegate {
     func ocrViewController(_ controller: OCRViewController, didFinishOCR result: [String]) {
-        Task {
-            guard let polished = try? await reviewAPIClient.parseOCRText(ocrText: result.joined(separator: "\n")) else {
-                webviewCommandSender.sendScanResults(results: .init())
-                return
+        Task { [weak self] in
+            do {
+                guard let self else { return }
+                let polished = try await reviewAPIClient.parseOCRText(ocrText: result.joined(separator: "\n"))
+                dismiss(with: polished)
+            } catch {
+                guard let self else { return }
+                if let urlError = error as? URLError, urlError.code == .cancelled {
+                    dismiss(animated: true)
+                    return
+                }
+                dismiss(with: .init())
             }
-            
-            webviewCommandSender.sendScanResults(results: polished)
-            dismiss(animated: true)
+        }.regist(&store, id: .parseAndSendOCRResult)
+    }
+    
+    func dismiss(with result: String) {
+        dismiss(animated: true) { [weak self] in
+            self?.webviewCommandSender.sendScanResults(results: result)
         }
     }
-}
-
-// MARK: - DebugWebViewController
-class DebugWebViewController: WebViewController {
     
-    init() {
-        super.init(wewbViewURL: URL(string: "https://misik-web.vercel.app")!)
-    }
-    
-    @MainActor required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    override func loadWebView() {
-        webView.loadHTMLString(debug, baseURL: nil)
+    func ocrViewControllerDidDismiss() {
+        store.cancel(id: .parseAndSendOCRResult)
     }
 }
 
-extension DebugWebViewController {
-    var debug: String {
-                """
-        <!DOCTYPE html>
-        <html lang="ko">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>WebView Command Test</title>
-            <script>
-                // iOS에서 실행될 JavaScript 이벤트 수신기
-                window.response = {
-                    receiveGeneratedReview: function(review) {
-                        console.log("📩 iOS에서 받은 리뷰:", review);
-                        document.getElementById("reviewOutput").innerText = "받은 리뷰: " + review.result;
-                    },
-                    receiveScanResult: function(results) {
-                        console.log("📩 iOS에서 받은 스캔 결과:", results);
-                        document.getElementById("scanOutput").innerText = results;
-                    }
-                };
-
-                function sendCommand(command, body = {}) {
-                    if (window.webkit && window.webkit.messageHandlers[command]) {
-                        window.webkit.messageHandlers[command].postMessage(body);
-                        console.log("📤 iOS로 명령 전송:", command, body);
-                    } else {
-                        console.error("⚠️ iOS 핸들러가 등록되지 않음:", command);
-                    }
-                }
-            </script>
-        </head>
-        <body>
-            <h2>WebView Command Test</h2>
-            
-            <button onclick="sendCommand('openCamera')">📸 카메라 열기</button>
-            <button onclick="sendCommand('openGallery')">🖼️ 갤러리 열기</button>
-            <button onclick="sendCommand('share')">📤 공유하기</button>
-            <button onclick="sendCommand('createReview', { ocrText: '품명 카야토스트+음료세트', hashTag: ['특별한 메뉴가 있어요'], reviewStyle: 'CUTE' })">📝 리뷰 생성</button>
-            <button onclick="sendCommand('copy', { review: '복사할 내용' })">📋 복사하기</button>
-
-            <h3>📨 iOS에서 받은 데이터</h3>
-            <p id="reviewOutput">받은 리뷰: 없음</p>
-            <p id="scanOutput">받은 스캔 결과: 없음</p>
-        </body>
-        </html>
-
-        """
-    }
+private extension TaskStore.TaskID {
+    static let parseAndSendOCRResult: String = "ParseAndSendOCRResult"
 }

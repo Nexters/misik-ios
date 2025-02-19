@@ -67,14 +67,15 @@ final class OCRViewModel: OCRViewModelType {
 private extension OCRViewModel {
     
     func transform(viewDidLoad: AsyncStream<Void>) {
-        Task {
+        Task { [weak self] in
             for await _ in viewDidLoad {
+                guard let self else { return }
                 isLoadingContinuation?.yield(true)
                 let result = (try? await processor.process(targetImage)) ?? []
                 ocrResultContinuation?.yield(result)
                 isLoadingContinuation?.yield(false)
             }
         }
-        .regist(&store, id: "ViewDidLoad")
+        .regist(&store)
     }
 }

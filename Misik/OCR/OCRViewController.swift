@@ -13,6 +13,7 @@ final class OCRViewController: UIViewController {
     protocol Delegate: AnyObject {
         
         func ocrViewController(_ controller: OCRViewController, didFinishOCR result: [String])
+        func ocrViewControllerDidDismiss()
     }
     
     weak var delegate: Delegate?
@@ -34,6 +35,8 @@ final class OCRViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setupGradient()
+        
         let input = OCRViewModelInput(
             viewDidLoad: viewDidLoadStream
         )
@@ -85,8 +88,15 @@ final class OCRViewController: UIViewController {
         label.textColor = .textWhite
         label.text = "영수증을 인식 중입니다."
         label.isHidden = true
+        label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
+    }()
+    
+    private lazy var gradientView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
     }()
 }
 
@@ -97,8 +107,9 @@ private extension OCRViewController {
 
         view.addSubview(imageView)
         view.addSubview(scanningView)
-        view.addSubview(infoLabel)
+        view.addSubview(gradientView)
         view.addSubview(closeButtonView)
+        view.addSubview(infoLabel)
         
         NSLayoutConstraint.activate([
             imageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -116,25 +127,40 @@ private extension OCRViewController {
             closeButtonView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
             closeButtonView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
             
-            infoLabel.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -50),
-            infoLabel.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor),
+            gradientView.widthAnchor.constraint(equalTo: view.widthAnchor),
+            gradientView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            gradientView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            gradientView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            gradientView.heightAnchor.constraint(equalToConstant: 103),
+            
+            infoLabel.widthAnchor.constraint(equalTo: gradientView.widthAnchor),
+            infoLabel.leadingAnchor.constraint(equalTo: gradientView.leadingAnchor),
+            infoLabel.trailingAnchor.constraint(equalTo: gradientView.trailingAnchor),
+            infoLabel.topAnchor.constraint(equalTo: gradientView.topAnchor, constant: 20),
         ])
     }
     
+    func setupGradient() {
+        gradientView.layoutIfNeeded()
+        gradientView.setGradient(color1: .clear, color2: .gray600)
+    }
+    
     func bindUI(_ output: OCRViewModelOutput) {
-        Task {
+        Task { [weak self] in
             for await isLoading in output.isLoading {
+                guard let self else { return }
                 if isLoading {
-                    startLoading()
+                    self.startLoading()
                 }
             }
-        }.regist(&store, id: "Loading")
+        }.regist(&store)
         
-        Task {
+        Task { [weak self] in
             for await result in output.ocrResult {
-                delegate?.ocrViewController(self, didFinishOCR: result)
+                guard let self else { return }
+                self.delegate?.ocrViewController(self, didFinishOCR: result)
             }
-        }.regist(&store, id: "Result")
+        }.regist(&store)
         
         imageView.image = output.targetImage
     }
@@ -146,6 +172,23 @@ private extension OCRViewController {
     }
     
     func didTapCloseButton() {
-        dismiss(animated: true)
+        dismiss()
+    }
+    
+    func dismiss() {
+        dismiss(animated: true) { [weak self] in
+            self?.delegate?.ocrViewControllerDidDismiss()
+        }
+    }
+}
+
+private extension UIView{
+    
+    func setGradient(color1: UIColor, color2: UIColor){
+        let gradient: CAGradientLayer = CAGradientLayer()
+        gradient.colors = [color1.cgColor, color2.cgColor]
+        gradient.locations = [0.0, 1.0]
+        gradient.frame = bounds
+        layer.addSublayer(gradient)
     }
 }

@@ -11,7 +11,8 @@ class ReviewAPIClient {
     
     /// API 기본 URL
     private let baseURL = URL(string: "https://api.misik.me/reviews")!
-    
+    private let marketingVersion: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
+
     /// 영구적인 `device-id` (앱 삭제 후에도 유지됨)
     private let deviceID: String = {
         if let savedID = UserDefaults.standard.string(forKey: "device-id") {
@@ -27,7 +28,9 @@ class ReviewAPIClient {
     private var commonHeaders: [String: String] {
         return [
             "device-id": deviceID,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "app-version": marketingVersion,
+            "app-platform": "IOS"
         ]
     }
     
@@ -37,8 +40,6 @@ class ReviewAPIClient {
         
         let requestBody = ReviewRequest(ocrText: ocrText, hashTag: hashTag, reviewStyle: reviewStyle)
         request.httpBody = try JSONEncoder().encode(requestBody)
-        
-        print(String(data: request.httpBody!, encoding: .utf8))
         
         let (data, response) = try await URLSession.shared.data(for: request)
         return try handleResponse(data: data, response: response)
@@ -63,6 +64,15 @@ class ReviewAPIClient {
         return try handleResponse(data: data, response: response)
     }
     
+    /// 웹뷰 URL 조회
+    /// TODO: 도메인 분리
+    func getWebViewURL() async throws -> GetWebViewURLResponse {
+        let url = URL(string: "https://api.misik.me/webview/home")!
+        let request = createReviewRequest(for: url, httpMethod: "GET")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        return try handleResponse(data: data, response: response)
+    }
+    
     /// 공통된 요청 헤더와 기본 설정
     private func createReviewRequest(for url: URL, httpMethod: String) -> URLRequest {
         var request = URLRequest(url: url)
@@ -82,21 +92,11 @@ class ReviewAPIClient {
             throw ReviewAPIError.invalidResponse
         }
         
-        
-        do {
-            switch httpResponse.statusCode {
-                case 200..<300:
-                    print("\(httpResponse.url) \nAPI Success \(String(data: data, encoding: .utf8))")
-                    return try JSONDecoder().decode(T.self, from: data)
-                case 400:
-                    let errorResponse = try JSONDecoder().decode(ReviewErrorResponse.self, from: data)
-                    throw ReviewAPIError.badRequest(message: errorResponse.message)
-                default:
-                    throw ReviewAPIError.unexpected(statusCode: httpResponse.statusCode)
-            }
-        } catch {
-            print("\(httpResponse.url) \nAPI ERROR \(error) \(String(data: data, encoding: .utf8))")
-            throw error
+        switch httpResponse.statusCode {
+            case 200..<300:
+                return try JSONDecoder().decode(T.self, from: data)
+            default:
+                throw try handleError(statusCode: httpResponse.statusCode, data: data)
         }
     }
     
@@ -104,24 +104,15 @@ class ReviewAPIClient {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw ReviewAPIError.invalidResponse
         }
-
-        do {
-            switch httpResponse.statusCode {
-                case 200..<300:
-                    print("\(httpResponse.url) \nAPI Success \(String(data: data, encoding: .utf8))")
-                    guard let str = String(data: data, encoding: .utf8) else {
-                        throw ReviewAPIError.invalidResponse
-                    }
-                    return str
-                case 400:
-                    let errorResponse = try JSONDecoder().decode(ReviewErrorResponse.self, from: data)
-                    throw ReviewAPIError.badRequest(message: errorResponse.message)
-                default:
-                    throw ReviewAPIError.unexpected(statusCode: httpResponse.statusCode)
-            }
-        } catch {
-            print("\(httpResponse.url) \nAPI ERROR \(error) \(String(data: data, encoding: .utf8))")
-            throw error
+        
+        switch httpResponse.statusCode {
+            case 200..<300:
+                guard let str = String(data: data, encoding: .utf8) else {
+                    throw ReviewAPIError.invalidResponse
+                }
+                return str
+            default:
+                throw try handleError(statusCode: httpResponse.statusCode, data: data)
         }
     }
     
@@ -130,25 +121,26 @@ class ReviewAPIClient {
             throw ReviewAPIError.invalidResponse
         }
         
-        do {
-            switch httpResponse.statusCode {
-                case 200..<300:
-                    print("\(httpResponse.url) \nAPI Success \(String(data: data, encoding: .utf8))")
-                    guard let str = String(data: data, encoding: .utf8), let converted = Int(str) else {
-                        throw ReviewAPIError.badRequest(message: "ID가 잘못 내려왔습니다")
-                    }
-                    
-                    return converted
-                    
-                case 400:
-                    let errorResponse = try JSONDecoder().decode(ReviewErrorResponse.self, from: data)
-                    throw ReviewAPIError.badRequest(message: errorResponse.message)
-                default:
-                    throw ReviewAPIError.unexpected(statusCode: httpResponse.statusCode)
-            }
-        } catch {
-            print("\(httpResponse.url) \nAPI ERROR \(error) \(String(data: data, encoding: .utf8))")
-            throw error
+        switch httpResponse.statusCode {
+            case 200..<300:
+                guard let str = String(data: data, encoding: .utf8), let converted = Int(str) else {
+                    throw ReviewAPIError.invalidResponse
+                }
+                return converted
+            default:
+                throw try handleError(statusCode: httpResponse.statusCode, data: data)
+        }
+    }
+    
+    private func handleError(statusCode: Int, data: Data) throws -> ReviewAPIError {
+        switch statusCode {
+            case 400:
+                throw ReviewAPIError.badRequest
+            case 426:
+                let res = try JSONDecoder().decode(ReviewUpdateRequiredErrorResponse.self, from: data)
+                throw ReviewAPIError.updateRequired(urlStr: res.url)
+            default:
+                throw ReviewAPIError.unexpected(statusCode: statusCode, data: data)
         }
     }
 }
@@ -172,16 +164,20 @@ struct ReviewResponse: Codable {
     let review: String?
 }
 
-/// 오류 응답 모델
-struct ReviewErrorResponse: Codable {
-    let message: String
+struct ReviewUpdateRequiredErrorResponse: Codable {
+    let url: String
+}
+
+struct GetWebViewURLResponse: Codable {
+    let url: String
 }
 
 /// API 오류 정의
 enum ReviewAPIError: Error {
     case invalidResponse
-    case badRequest(message: String)
-    case unexpected(statusCode: Int)
+    case badRequest
+    case updateRequired(urlStr: String)
+    case unexpected(statusCode: Int, data: Data?)
 }
 
 /// OCR 파싱 요청 모델
@@ -193,3 +189,5 @@ struct OCRParsingRequest: Codable {
 struct OCRParsingResponse: Codable {
     let parsed: [[String : String]]
 }
+
+
