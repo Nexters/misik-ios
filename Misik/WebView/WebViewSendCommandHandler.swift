@@ -24,7 +24,7 @@ class WebViewCommandSender {
     /// 생성된 리뷰를 웹뷰의 JavaScript 함수로 전달
     func sendGeneratedReview(review: String) {
         // 에러일 경우, 기존 방식의 경우 빈 딕션어리를 내려주기로 했으나, "error" 로 내려주도록 변경됨.
-        let checkedResult = review == "" ? "error" : review
+        let checkedResult = review == "" ? "error" : escapeForJavaScript(review)
         callJavaScript(functionName: "receiveGeneratedReview", params: ["result" : checkedResult])
     }
     
@@ -55,9 +55,30 @@ class WebViewCommandSender {
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) {
             self.webView.evaluateJavaScript(jsCode) { result, error in
                 if let error = error {
-                    print("JavaScript 실행 오류: \(error.localizedDescription)")
+                    print("JavaScript 실행 오류: \(jsCode) \(error.localizedDescription)")
+                } else {
+                    print("JavaScript 실행 성공: \(jsCode)")
                 }
             }
         }
     }
+    
+    func escapeForJavaScript(_ value: String) -> String {
+        let patterns: [String: String] = [
+            "\\\\": "\\\\\\\\", // 백슬래시 → \\
+            "\"": "\\\"",       // 큰따옴표 → \"
+            "\'": "\\\'",       // 작은따옴표 → \'
+            "\n": "\\n",        // 개행 문자 → \n
+            "\r": "\\r",        // 캐리지 리턴 → \r
+            "\t": "\\t"         // 탭 문자 → \t
+        ]
+        
+        var escapedValue = value
+        for (pattern, replacement) in patterns {
+            escapedValue = escapedValue.replacingOccurrences(of: pattern, with: replacement)
+        }
+        
+        return escapedValue
+    }
+
 }
