@@ -5,9 +5,9 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>촬영된 사진을 저장하기 위해 사진 라이브러리에 접근합니다.</string>
+	<string>영수증 사진을 촬영 및 업로드하여 AI 리뷰를 생성할 수 있도록 사진 라이브러리에 접근합니다.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>앱에서 사진 촬영을 위해 카메라를 사용합니다.</string>
+	<string>영수증 사진을 촬영하여 AI 리뷰를 생성할 수 있도록 카메라를 사용합니다.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
