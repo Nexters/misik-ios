@@ -236,8 +236,7 @@
 				INFOPLIST_FILE = Misik/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "미식 Misik";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.food-and-drink";
-				INFOPLIST_KEY_NSCameraUsageDescription = "앱에서 사진 촬영을 위해 카메라를 사용합니다.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "촬영된 사진을 저장하기 위해 사진 라이브러리에 접근합니다.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Misik이 AI 리뷰를 생성할 수 있도록 사진 라이브러리에 접근합니다.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -275,8 +274,7 @@
 				INFOPLIST_FILE = Misik/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "미식 Misik";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.food-and-drink";
-				INFOPLIST_KEY_NSCameraUsageDescription = "앱에서 사진 촬영을 위해 카메라를 사용합니다.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "촬영된 사진을 저장하기 위해 사진 라이브러리에 접근합니다.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Misik이 AI 리뷰를 생성할 수 있도록 사진 라이브러리에 접근합니다.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
