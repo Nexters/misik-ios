@@ -63,22 +63,11 @@ class WebViewCommandSender {
         }
     }
     
-    func escapeForJavaScript(_ value: String) -> String {
-        let patterns: [String: String] = [
-            "\\\\": "\\\\\\\\", // 백슬래시 → \\
-            "\"": "\\\"",       // 큰따옴표 → \"
-            "\'": "\\\'",       // 작은따옴표 → \'
-            "\n": "\\n",        // 개행 문자 → \n
-            "\r": "\\r",        // 캐리지 리턴 → \r
-            "\t": "\\t"         // 탭 문자 → \t
-        ]
-        
-        var escapedValue = value
-        for (pattern, replacement) in patterns {
-            escapedValue = escapedValue.replacingOccurrences(of: pattern, with: replacement)
-        }
-        
-        return escapedValue
+    func escapeForJavaScript(_ input: String) -> String {
+        let pattern = #"\\'|\\n|\r|\n|\t"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { return "" }
+        let result = regex.stringByReplacingMatches(in: input, options: [], range: NSRange(input.startIndex..., in: input), withTemplate: "")
+        return result
     }
 
 }
